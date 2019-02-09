@@ -234,7 +234,7 @@ class Landsat(Image):
         self.width = self.profile['width']
         self.height = self.profile['height']
         
-        aff = self.profile['affine']
+        aff = self.profile['transform']
         self.xmin = aff[2]
         self.xmax = aff[2] + aff[0] * self.width
         self.ymin = aff[5] + aff[4] * self.height
