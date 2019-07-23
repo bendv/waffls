@@ -17,4 +17,3 @@ def getbit(x, pos):
     comp = 2**pos
     y = (x & comp)//comp  
     return y
-
