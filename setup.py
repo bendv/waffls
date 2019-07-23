@@ -63,5 +63,5 @@ setup(
         ],
     author='Ben DeVries',
     author_email='bdv@umd.edu',
-    url='http://bitbucket.org/bendv/waffls'
+    url='https://github.com/bendv/waffls'
 )

@@ -1,5 +1,5 @@
-# waffls v0.1.8
-----------------
+# waffls
+---------
 
 **wa**ter **f**raction **f**rom **L**andsat and **S**entinel-2 imagery
 
@@ -14,7 +14,7 @@ waffls is built on top of gdal and a number of python libraries. The necessary p
 To install waffls in a separate conda environment, run the following:
 
 ```bash
-conda create -n waffls -c conda-forge gdal rasterio cython
+conda create -n waffls -c conda-forge gdal rasterio cython joblib
 conda activate waffls
 git clone https://github.com/bendv/waffls
 cd waffls
