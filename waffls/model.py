@@ -9,7 +9,7 @@ SWF Model functions for learning and predicting
 import numpy as np
 import rasterio
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.externals import joblib
+import joblib
 import time
 import uuid
 import os
@@ -24,18 +24,6 @@ def model_train(train_x, train_y, **kwargs):
     clf.fit(train_x, train_y)
 
     return clf
-
-def inspect_model(clf):
-    ''' 
-    TODO...
-    ''' 
-    pass
-
-def write_model(clf, outfile):
-    '''
-    TODO...
-    '''
-    pass
 
 def predict_swf(model, input_filelist, tempdir = '.', verbose = False, output_filename = None, linechunk = 1000):
 
@@ -66,12 +54,7 @@ def predict_swf(model, input_filelist, tempdir = '.', verbose = False, output_fi
     os.remove(filepath)
     
     return predicted[0]
-
-def rescale_swf(swf, outfile, rescale = 100, dtypeout = np.uint8, nodatavalue = 255):
-    '''
-    TODO
-    '''
-    pass
+    
 
 
 

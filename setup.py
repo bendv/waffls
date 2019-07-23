@@ -52,6 +52,7 @@ setup(
     include_dirs=[np.get_include()],
     license='MIT',
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     install_requires=[
         'rasterio', 
         'numpy', 
