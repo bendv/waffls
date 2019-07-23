@@ -11,6 +11,7 @@ Class Aggswf inherits from either Landsat or HLS depending on the value of 'plat
 ## author: Ben DeVries
 ## email: bdv@umd.edu
 
+from __future__ import division, print_function
 import numpy as np
 from scipy import ndimage
 import warnings
@@ -30,7 +31,7 @@ def _in2d(x, vals):
 
 class _AggswfConfig(object):
     '''
-    Configuration class for the Aggswf class
+    Configuration class for the aggswf algorithm
     '''
     def __init__(self, aggregate_factor = 5, initial_swf = 1., indices = None, exclude_bands = None):
 
@@ -66,6 +67,7 @@ class _AggswfConfig(object):
         for i in self.index_names:
             self.indices[i] = None
             self.aggregated_indices[i] = None
+            # these will be filled in later
         self.index_filenames = OrderedDict()
 
 # Aggswf class - conditional inheritence depending on 'platform' argument
@@ -77,6 +79,9 @@ class Aggswf(_AggswfConfig, Image):
     Manually copies relevant attributes from Image instance given in args
     '''
     def __init__(self, Dataset, copy = False, **kwargs):
+        
+        if Dataset.dataset == 'S10':
+            raise ValueError("S10 data is not supported yet.")
         
         _AggswfConfig.__init__(self, **kwargs)
         Image.__init__(self)
@@ -182,7 +187,7 @@ class Aggswf(_AggswfConfig, Image):
 
     def delete_indices_from_disk(self):
         '''
-        Removes any files written using write_bands() from disk, and resets index_filenames attribute
+        Removes any files written using write_bands() from disk, and resets output_filenames attribute
         '''
         if self.index_filenames is None:
             raise ValueError("No index files to delete.")
@@ -222,7 +227,7 @@ class Aggswf(_AggswfConfig, Image):
     def export_samples(self):
         '''
         Prepares and exports response (SWF) and covariates for input into a model (see model.py module)
-        TODO: insert sampling option
+        TODO: insert option for stratified random sampling
         '''
         if self.aggregated_swf is None:
             raise ValueError("swf must be set and aggregated first")

@@ -6,6 +6,7 @@ Generic Image class with attributes inherited by Landsat and HLS classes
 ## Ben DeVries
 ## email: bdv@umd.edu
 
+from __future__ import absolute_import, print_function, division
 import numpy as np
 import os
 import rasterio
@@ -70,7 +71,6 @@ class Image(object):
     def reset_nodatavalue(self, new_nodatavalue):
         '''
         Replaces current nodatavalue (default HLS: -1000; Landsat: -9999) with a user specified new nodatavalue (e.g. -9999, to match Landsat) in all bands
-        *** NOT TESTED ***
         '''
         if not self.opened:
             raise ValueError("Image bands must be opened first.")
@@ -89,6 +89,8 @@ class Image(object):
         pass
         
     def compute_index(self, index, tc_coef = tc_coef, verbose = False):
+        ### TODO: consider moving this outside as function to be called from various classes ###
+        ### e.g. a function in indices.py that takes an OrderedDict of bands as an argument and appends the indices to it ###
         '''
         Compute one or more of the following indices and add to dataset:
             - MNDWI = (G - SWIR1) / (G + SWIR1)

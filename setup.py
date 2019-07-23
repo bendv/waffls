@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import numpy as np
 from setuptools import setup
@@ -19,6 +20,7 @@ ext_modules = []
 if use_cython:
     ext_modules += [
         Extension("waffls._dswe", ["waffls/_dswe.pyx"]),
+        Extension("waffls._pseudocluster", ["waffls/_pseudocluster.pyx"])
         ]
     cmdclass.update({
         'build_ext': build_ext
@@ -26,6 +28,7 @@ if use_cython:
 else:
     ext_modules += [
         Extension("waffls._dswe", ["waffls/_dswe.c"]),
+        Extension("waffls._pseudocluster", ["waffls/_pseudocluster.c"])
         ]
 
 
@@ -41,27 +44,28 @@ cmdclass['sdist'] = sdist
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-exec(open('waffls/__version__.py').read())
+exec(read('waffls/__version__.py'))
 
 setup(
-    name='waffls',
-    version=__version__,
-    packages=['waffls',],
+    name = 'waffls',
+    version = __version__,
+    packages = ['waffls',],
     cmdclass = cmdclass,
-    ext_modules=ext_modules,
-    include_dirs=[np.get_include()],
-    license='MIT',
-    long_description=read('README.md'),
+    ext_modules = ext_modules,
+    include_dirs = [np.get_include()],
+    license = 'MIT',
+    long_description = read('README.md'),
     long_description_content_type='text/markdown',
-    install_requires=[
+    install_requires = [
         'rasterio', 
         'numpy', 
         'scipy', 
         'scikit-learn', 
         'datetime', 
-        'pyyaml'
         ],
-    author='Ben DeVries',
-    author_email='bdv@umd.edu',
-    url='https://github.com/bendv/waffls'
+    author = 'Ben DeVries',
+    author_email = 'devries.br@gmail.com',
+    url = 'https://github.com/bendv/waffls'
 )
+
+

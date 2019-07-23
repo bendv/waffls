@@ -6,6 +6,7 @@ Spectral index functions (including DSWE)
 ## author: Ben DeVries
 ## email: bdv@umd.edu
 
+from __future__ import division, print_function
 import numpy as np
 from collections import OrderedDict
 import math

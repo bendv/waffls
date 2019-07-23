@@ -1,11 +1,12 @@
 '''
-Contains Image classes for Landsat data
+Contains Image container classes for Landsat data
 '''
 
 ## landsat.py
 ## author: Ben DeVries
 ## email: bdv@umd.edu
 
+from __future__ import division, print_function
 import rasterio
 import numpy as np
 from scipy import ndimage
@@ -65,7 +66,7 @@ def get_LandsatInfo(x, as_DataFrame = False):
     elif info[0][1] == "M":
         sensor = "MSS"
     else:
-        raise ValueError("Sensor '{0}' not recognized. Check sceneid.")
+        raise ValueError("Sensor \'{0}\' not recognized. Check sceneid.")
     
     # processing level
     proc = info[1]
@@ -201,6 +202,7 @@ class Landsat(Image):
         self.sceneid = s['sceneID']
         self.sensor = s['sensor']
         self.slc = s['slc']
+        self.dataset = 'Landsat'
         self.set_date(s['acquisition_date'])
         if self.sensor in ['OLI', 'OLI_TIRS']:
             self.bandindices = range(2, 8)

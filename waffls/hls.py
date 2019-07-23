@@ -5,9 +5,11 @@ from scipy import ndimage
 import numpy as np
 import warnings
 from collections import OrderedDict
+from affine import Affine
 
 from .image import Image
 from .utils import getbit
+from .indices import tc_coef
 
 try:
     import pandas as pd
@@ -81,11 +83,19 @@ class HLS(Image):
         self.sensor = info['sensor']
         self.set_date(info['acquisition_date'])
         self.version = info['version']
-        if self.dataset == 'L30':
-            self.bandindices = [ "band{0:02}".format(i) for i in range(2, 8) ]
-        elif self.dataset in ['S30', 'S10']:
-            self.bandindices = ['B02', 'B03', 'B04', 'B8A', 'B11', 'B12']
         self.bandnames = ['B', 'G', 'R', 'NIR', 'SWIR1', 'SWIR2']
+        if self.dataset == 'L30':
+            self.res = 30
+            self.bandindices = [ "band{0:02}".format(i) for i in range(2, 8) ]
+        elif self.dataset == 'S30':
+            self.res = 30
+            self.bandindices = ['B02', 'B03', 'B04', 'B8A', 'B11', 'B12']
+        elif self.dataset == 'S10':
+            self.res = 10
+            # S10 is actually a multi-resolution dataset
+            # TODO: think about how to deal with this; for now, only 10m bands are considered
+            self.bandindices = ['B02', 'B03', 'B04', 'B08']
+            self.bandnames = ['B', 'G', 'R', 'NIR']
         self.footprint = info['footprint']
         self.bands = None
         self.nodatavalue = -1000
@@ -98,15 +108,20 @@ class HLS(Image):
         # rasterio-style profile
         with rasterio.open('HDF4_EOS:EOS_GRID:"{0}":Grid:QA'.format(self.filepath)) as src:
             self.profile = src.profile.copy()
+            self.profile.update(crs = src.profile['crs']['init'])
 
         self.width = self.profile['width']
         self.height = self.profile['height']
-        if self.dataset in ['S30', 'L30', 'M30']:
-            self.res = 30
-        elif self.dataset == 'S10':
-            self.res = 10
         self.dtype = np.int16
-        self.crs = self.profile['crs']['init']
+        self.crs = self.profile['crs']
+        
+        # fix transform for S10 (temporary fix...)
+        if self.dataset == 'S10':
+            tmp = list(self.profile['transform'])
+            tmp[0] = 10
+            tmp[4] = -10
+            self.profile.update(transform = Affine(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]))
+        
         self.profile.update(
             driver = 'GTiff', # for writing bands to disk
             count = 1, # output one band at a time
@@ -118,7 +133,7 @@ class HLS(Image):
         self.xmin = aff[2]
         self.xmax = aff[2] + aff[0] * self.width
         self.ymin = aff[5] + aff[4] * self.height
-        self.ymin = aff[5]
+        self.ymax = aff[5]
     
     def read(self, verbose = False):
         self.bands = OrderedDict()
@@ -185,7 +200,7 @@ class HLS(Image):
         if not 'snow_ice' in kwargs:
             kwargs['snow_ice'] = True
         if kwargs['snow_ice']:
-            msk += getbit(self.qa, 1)
+            msk += getbit(self.qa, 4)
             
         ### aerosol quality (OLI only) ###
         ## TODO
@@ -204,3 +219,17 @@ class HLS(Image):
         self.mask = np.zeros([self.height, self.width], dtype = np.uint8)
         self.mask[np.where(msk > 0)] = 1
         msk = None
+        
+    def compute_index(self, index, verbose = False):
+        '''
+        Addition error checking for S10 data, since only 4 bands are available at 10m resolution.
+        '''
+        if not isinstance(index, list):
+            index = [index]
+        if self.dataset == "S10":
+            if not all([i in ['NDVI', 'NDWI'] for i in index]):
+                raise ValueError("HLS-S10 only supports NDVI and NDWI as indices.")
+        
+        super(HLS, self).compute_index(index, verbose = verbose)
+        
+        
