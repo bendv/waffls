@@ -9,15 +9,33 @@ waffls is a collection of algorithms for estimating sub-pixel surface water frac
 
 ## Installation
 
-waffls is built on top of gdal and a number of python libraries. The rasterio and pyhdf libraries must be installed first, and can be accessed through conda. See [here](https://conda.io/docs/user-guide/install/index.html) for instructions on installing conda. To install waffls in a separate python-3 conda environment, run the following:
+`waffls` is built on top of gdal and a number of python libraries. To install its dependencies using conda:
 
 ```bash
 conda config --add channels conda-forge
-conda create -n waffls gdal rasterio joblib cython
+conda create -n waffls gdal rasterio joblib cython scipy scikit-learn
+```
+
+You can then install waffls using `pip` in your new environment:
+
+```bash
+conda activate waffls
+pip install waffls
+```
+
+Or to install from source:
+
+```bash
 conda activate waffls
 git clone https://github.com/bendv/waffls
 cd waffls
 python setup.py install
+```
+
+Check installation and version:
+
+```bash
+python -c "import waffls; print(waffls.__version__)"
 ```
 
 ## Reference
