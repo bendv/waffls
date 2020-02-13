@@ -62,8 +62,8 @@ class S2(Image):
     '''
     def __init__(self, filepath, resolution = 20, nir_broad_band = False):
         
-        filepath = filepath.strip('/')
-        
+        #filepath = filepath.strip('/')
+
         if not os.path.splitext(filepath)[1] == '.SAFE':
             raise ValueError("Only SAFE formatted S2 data are supported.")
         
@@ -72,7 +72,7 @@ class S2(Image):
     
         Image.__init__(self)
         
-        self.filepath = os.path.abspath(filepath)
+        self.filepath = filepath
         info = get_S2Info(filepath)
         
         self.sceneid = info['sceneID']
