@@ -62,7 +62,8 @@ class S2(Image):
     '''
     def __init__(self, filepath, resolution = 20, nir_broad_band = False):
         
-        #filepath = filepath.strip('/')
+        if not os.path.exists(filepath):
+            raise ValueError("{0} not found.".format(filepath))
 
         if not os.path.splitext(filepath)[1] == '.SAFE':
             raise ValueError("Only SAFE formatted S2 data are supported.")
