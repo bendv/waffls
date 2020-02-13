@@ -36,7 +36,7 @@ def get_S2Info(x, as_DataFrame = False):
     date = datetime.strptime(info[2], "%Y%m%dT%H%M%S")
     
     # tile
-    tile = info[5].replace('T', '')
+    tile = info[5][1:]
        
     sceneinfo = {
         'sceneID': os.path.splitext(x)[0],
