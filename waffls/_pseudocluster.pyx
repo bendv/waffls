@@ -16,37 +16,37 @@ from libc.stdlib cimport rand, RAND_MAX, srand
 
 # helper function for random indices
 @cython.wraparound(False)
-def randidx(int stop):
+cdef int randidx(int stop):
     cdef float randflt = <float> rand() / <float> RAND_MAX
     cdef int randi = <int> (randflt * <float> stop)
     return randi
 
 
 # X - covariates (2-D)
-# dswe (1-D)
+# watermask (1-D)
 # all are flattened already
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _pseudocluster(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim=1] dswe, unsigned int nsamples, unsigned int cl):
+def _pseudocluster1(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim=1] watermask, unsigned int nsamples, unsigned int cl):
 
     # manual bounds and type checks
-    assert X.shape[1] == dswe.shape[0]
-    assert cl <= dswe.shape[0]
+    assert X.shape[1] == watermask.shape[0]
+    assert cl <= watermask.shape[0]
     assert X.dtype == np.int16
-    assert dswe.dtype == np.uint8
+    assert watermask.dtype == np.uint8
     
     # ranges and counters
     cdef unsigned int nbands = X.shape[0] # number of covariates (bands)
-    cdef unsigned int npixels = dswe.shape[0] # total number of available pixels
+    cdef unsigned int npixels = watermask.shape[0] # total number of available pixels
     cdef unsigned int k, b, i, j
     
     # min and max possible swf
     cdef float swf_min, swf_max
     
     # total number of possible water (W) and land (L) pixels
-    cdef unsigned int W = np.sum(dswe == 1)
-    cdef unsigned int L = np.sum(dswe == 0)
+    cdef unsigned int W = np.sum(watermask == 1)
+    cdef unsigned int L = np.sum(watermask == 0)
     assert (L+W) >= cl, "Not enough water and land samples to derive swf"
       
     if W == 0:
@@ -66,7 +66,7 @@ def _pseudocluster(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim
     bands_w.fill(-9999) # to check if they're being skipped
     j = 0
     for i in range(npixels):
-        if dswe[i,] == 1:
+        if watermask[i,] == 1:
             for b in range(nbands):
                 bands_w[b,j] = X[b,i]
             j += 1
@@ -75,7 +75,7 @@ def _pseudocluster(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim
     bands_l.fill(-9999) # to check if they're being skipped
     j = 0
     for i in range(npixels):
-        if dswe[i,] == 0:
+        if watermask[i,] == 0:
             for b in range(nbands):
                 bands_l[b,j] = X[b,i]
             j += 1
@@ -96,7 +96,7 @@ def _pseudocluster(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim
     # for each sample:
         # 1) define a random "target" SWF between swf_min and swf_max
         # 2) given the cluster size, cl, determine the number of water and land pixels needed to achieve this
-        # 3) randomly select indices (rows) from the covariate (X) and dswe arrays and linearly mix them
+        # 3) randomly select indices (rows) from the covariate (X) and watermask arrays and linearly mix them
 
     for k in range(nsamples):
         
@@ -132,3 +132,53 @@ def _pseudocluster(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim
             
     return samples
     
+
+    ### revised algorithm
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _pseudocluster2(np.ndarray[np.int16_t, ndim=2] X, np.ndarray[np.uint8_t, ndim=1] watermask, unsigned int nsamples, unsigned int cl):
+
+    # manual bounds and type checks
+    assert X.shape[1] == watermask.shape[0]
+    assert cl <= watermask.shape[0]
+    assert X.dtype == np.int16
+    assert watermask.dtype == np.uint8
+    
+    # ranges and counters
+    cdef unsigned int nbands = X.shape[0] # number of covariates (bands)
+    cdef unsigned int npixels = watermask.shape[0] # total number of available pixels
+    cdef unsigned int k, b, i
+    
+    # total number of possible water (W) and land (L) pixels
+    cdef unsigned int W = np.sum(watermask == 1)
+    cdef unsigned int L = np.sum(watermask == 0)
+    assert (L+W) >= cl, "Not enough water and land samples to derive swf"
+
+    # last row is the swf, all others are the covariates
+    # note: everything is cast to float to preserve SWF decimal values
+    # convert back outside of cython - the wrapper function will do this (as well as the reshaping)
+    cdef np.ndarray[np.float32_t, ndim=2] samples = np.zeros( [nbands + 1, nsamples], dtype = np.float32 )
+    
+    # random indices to select from main array
+    cdef unsigned int idx
+
+    for k in range(nsamples):
+        i = 0
+        nw = 0
+        while i < cl:
+            idx = randidx(npixels)
+            if watermask[idx] == 0 or watermask[idx] == 1:
+                for b in range(nbands):
+                    samples[b,k] += <float> X[b,idx]
+                samples[nbands,k] += <float> watermask[idx]
+                i += 1
+    
+        # get average of all reflectances and binary water (to get a synthetic SWF)
+        samples[:,k] = samples[:,k] / <float> cl
+            
+    return samples
+
+
+
+

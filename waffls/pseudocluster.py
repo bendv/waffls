@@ -22,7 +22,7 @@ except ImportError:
 
 from .image import Image
 from .indices import calc_indices, _allowed_indices
-from ._pseudocluster import _pseudocluster
+from ._pseudocluster import _pseudocluster1, _pseudocluster2
 
 def _in2d(x, vals):
     '''
@@ -66,7 +66,7 @@ class Pseudocluster(Image):
         
         if Dataset.dataset == 'S10':
             default_bands = _S10bands
-            if not all([i in ['NDVI', 'NDWI'] for i in indices]):
+            if indices and not all([i in ['NDVI', 'NDWI'] for i in indices]):
                 raise ValueError("HLS-S10 only supports NDVI and NDWI as indices.")
         elif Dataset.dataset == 'S20':
             default_bands = _S20bands
@@ -228,12 +228,13 @@ class Pseudocluster(Image):
         self.nsamples = np.round(N * self.weights).astype(np.uint32)
         self.nsamples[np.isnan(self.weights)] = 0
 
-    def get_pseudoclusters(self, cl, ncpus=1):
+    def get_pseudoclusters(self, cl, ncpus=1, distribution = None):
         '''
         (wrapper for _runpseudocluster)
         Args:
             cl: number of pixels per pseudocluster
             ncpus: number of cpus (for parallel processing)
+            distribution: impose a distribution on the SWF sampled from each block (experimental and disabled by default). Either None (disabled) or "uniform", with plans to add other distibutions later.
             
         Returns:
             A tuple of (1) a numpy.ndarray of the covariates and (2) a 1-D array of the response variable
@@ -249,7 +250,8 @@ class Pseudocluster(Image):
                     'x': self.crop_array(z, (i, j)),
                     'wm': self.crop_array(self.water_mask, (i, j)),
                     'N': self.nsamples[i, j],
-                    'cl': cl
+                    'cl': cl,
+                    'distribution': distribution
                     })
 
         if has_multiprocessing and (ncpus > 1):
@@ -297,6 +299,11 @@ def _runpseudocluster(kwargs):
     '''
     Wrapper for pseudocluster function
     '''
+    if kwargs['distribution'] in ["uniform", "Uniform"]:
+        _pseudocluster = _pseudocluster1
+    else:
+        _pseudocluster = _pseudocluster2
+
     N = kwargs['N']
     if N > 0:
         x = kwargs['x']
